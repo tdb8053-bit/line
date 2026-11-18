@@ -80,7 +80,7 @@ function renderFields() {
       field.type = type;
       if (type === 'number') field.min = '1';
     }
-    if (title === '行李件數及尺寸') field.pattern = String.raw[0-9]{1,2}(?: .*|件.*|、.*|，.*|,.*|（.*|\(.*)?;
+    if (title === '行李件數及尺寸') field.pattern = /[0-9]{1,2}(?: .*|件.*|、.*|，.*|,.*|（.*|\x28.*)?/.source;
     field.required = required;
     field.placeholder = hint;
     field.dataset.title = title;
