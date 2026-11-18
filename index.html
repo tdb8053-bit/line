@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台灣包車自由行｜預約表單</title>
+<style>
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#12263e;font:17px/1.55 system-ui,sans-serif}main{max-width:680px;margin:auto;padding:20px}header,form,section{background:white;padding:24px;border-radius:18px;margin-bottom:16px}header{background:#10253e;color:white}h1,h2,p{margin:0 0 12px}label{display:block;font-weight:650;margin:14px 0}input,textarea,select,button,a.action{font:inherit;border-radius:9px;padding:10px;width:100%}select:disabled{opacity:1;color:#12263e;background:#eef3f8}input,textarea,select{border:1px solid #8493a3;background:white;color:#12263e;margin-top:5px}button,a.action{display:block;text-align:center;background:#08764c;color:white;border:0;text-decoration:none;cursor:pointer;margin-top:12px}textarea{resize:vertical}small{display:block;margin-top:12px}
+</style>
+<main>
+<header><p>台灣包車自由行</p><h1>預約表單</h1><p>選擇服務後，填寫下方資料。</p></header>
+<section id="preview-links" hidden>
+<h2>選擇預約服務</h2>
+<a class="action" href="?airport=ckg">預約清泉崗機場接送</a>
+<a class="action" href="?service=charter">諮詢包車旅遊</a>
+<a class="action" href="?airport=taoyuan">預約桃園機場接送</a>
+</section>
+<section id="airport-options" hidden>
+<h2 id="airport-title"></h2>
+<a class="action" id="pickup-link">接機｜從機場出發</a>
+<a class="action" id="dropoff-link">送機｜前往機場</a>
+<p><a href="?">返回服務選單</a></p>
+</section><form id="booking" hidden>
+<label>服務類型<select id="service"><option>接機</option><option>送機</option><option>包車旅遊</option></select></label>
+<div id="fields"></div>
+<button type="submit">我填好了，送出資料</button>
+<small>收到後，我們會與您確認車資、車輛及是否接單。</small>
+</form>
+<section id="review" hidden>
+<h2>確認並傳送至 LINE</h2>
+<p>核對後，開啟「台灣包車自由行」聊天室，再按 LINE 的傳送鍵，店家才會收到資料。</p>
+<label>您的預約資料<textarea id="summary" readonly rows="12"></textarea></label>
+<a class="action" id="send" hidden>開啟官方 LINE 聊天室</a><small id="send-status" role="status"></small>
+</section>
+</main>
+<script>
+const officialAccountId = '@900luzwb';
+const layouts = {
+  接機: [['抵達機場','airport'],['抵達日期與時間','datetime-local'],['航班號碼'],['送達地點（地址或飯店名稱）']],
+  送機: [['送達機場','airport'],['希望上車日期與時間','datetime-local'],['上車地點（地址或飯店名稱）'],['航班號碼與起飛時間']],
+  包車旅遊: [['出發日期','date'],['包車天數','number'],['上車地點（地址或飯店名稱）'],['預計景點或地區','text','還沒決定可填「想請您推薦」'],['最後下車地點','text','未定可填「待確認」',false]]
+};
+const common = [['乘車人數（含兒童）','number'],['行李件數及尺寸','text','沒有請填 0'],['聯絡人姓名'],['聯絡電話','tel'],['其他需求（例如兒童座椅）','textarea','沒有可留白',false]];
+const form = document.querySelector('#booking');
+const service = document.querySelector('#service');
+const fields = document.querySelector('#fields');
+const review = document.querySelector('#review');
+const entry = new URLSearchParams(location.search);
+const airportNames = new Map([['ckg','清泉崗機場'],['taoyuan','桃園國際機場']]);
+const entryServices = new Map([['pickup','接機'],['dropoff','送機'],['charter','包車旅遊']]);
+const airportFromEntry = airportNames.get(entry.get('airport'));
+const serviceFromEntry = entryServices.get(entry.get('service'));
+document.querySelector('#preview-links').hidden = Boolean(serviceFromEntry || airportFromEntry);
+if (airportFromEntry && !serviceFromEntry) {
+  document.querySelector('#airport-options').hidden = false;
+  document.querySelector('#airport-title').textContent = airportFromEntry + '接送';
+  document.querySelector('#pickup-link').href = '?' + new URLSearchParams({service:'pickup',airport:entry.get('airport')});
+  document.querySelector('#dropoff-link').href = '?' + new URLSearchParams({service:'dropoff',airport:entry.get('airport')});
+}
+form.hidden = !serviceFromEntry;
+if (serviceFromEntry) {
+  service.value = serviceFromEntry;
+  service.disabled = true;
+}
+function renderFields() {
+  fields.replaceChildren();
+  review.hidden = true;
+  for (const [title, type = 'text', hint = '', required = true] of [...layouts[service.value], ...common]) {
+    const label = document.createElement('label');
+    label.textContent = title + (required ? '（必填）' : '');
+    const field = document.createElement(type === 'airport' ? 'select' : type === 'textarea' ? 'textarea' : 'input');
+    if (type === 'airport') {
+      for (const name of ['','清泉崗機場','桃園國際機場']) {
+        field.add(new Option(name || '請選擇機場',name));
+      }
+      if (airportFromEntry) {
+        field.value = airportFromEntry;
+        field.disabled = true;
+      }
+    } else if (type !== 'textarea') {
+      field.type = type;
+      if (type === 'number') field.min = '1';
+    }
+    field.required = required;
+    field.placeholder = hint;
+    field.dataset.title = title;
+    label.append(field);
+    fields.append(label);
+  }
+}
+service.addEventListener('change', renderFields);
+fields.addEventListener('input', () => { review.hidden = true; });
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  const lines = [...fields.querySelectorAll('[data-title]')].map(field => {
+    const value = field.value.trim().replace('T', field.type === 'datetime-local' ? ' ' : 'T');
+    return field.dataset.title + '：' + (value || '未填');
+  });
+  const message = ['機場接送／包車預約', '服務：' + service.value, ...lines].join('\n');
+  document.querySelector('#summary').value = message;
+  const send = document.querySelector('#send');
+  const configured = /^@[a-z0-9._-]+$/i.test(officialAccountId);
+  send.hidden = !configured;
+  document.querySelector('#send-status').textContent = configured ? '' : '此表單目前供試填，正式送出功能尚未啟用。';
+  if (configured) {
+    send.href = 'https://line.me/R/oaMessage/' + encodeURIComponent(officialAccountId) + '/?' + encodeURIComponent(message);
+  }
+  review.hidden = false;
+  review.scrollIntoView({behavior:'smooth'});
+});
+renderFields();
+</script>
+</html>
