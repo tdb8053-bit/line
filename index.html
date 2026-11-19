@@ -39,7 +39,7 @@ const layouts = {
   送機: [['送達機場','airport'],['希望上車日期與時間','datetime-local'],['上車地點（地址或飯店名稱）'],['航班號碼與起飛時間']],
   包車旅遊: [['出發日期','date'],['希望上車時間','time'],['包車天數','number'],['上車地點（地址或飯店名稱）'],['預計景點或地區','text','還沒決定可填「想請您推薦」'],['最後下車地點','text','未定可填「待確認」',false]]
 };
-const common = [['乘車人數（含兒童）','number'],['行李件數及尺寸','text','請以件數開頭，例如 2 件，24 吋；沒有填 0'],['聯絡人姓名'],['聯絡電話','tel'],['其他需求（例如兒童座椅）','textarea','沒有可留白',false]];
+const common = [['乘車人數（含兒童）','number'],['行李件數及尺寸','text','例如 5 x 26 吋；只填件數也可以，沒有行李填 0'],['聯絡人姓名'],['聯絡電話','tel'],['其他需求（例如兒童座椅）','textarea','沒有可留白',false]];
 const form = document.querySelector('#booking');
 const service = document.querySelector('#service');
 const fields = document.querySelector('#fields');
@@ -80,7 +80,7 @@ function renderFields() {
       field.type = type;
       if (type === 'number') field.min = '1';
     }
-    if (title === '行李件數及尺寸') field.pattern = /[0-9]{1,2}(?: .*|件.*|、.*|，.*|,.*|（.*|\x28.*)?/.source;
+    if (title === '行李件數及尺寸') field.pattern = /[0-9]{1,2}(?:[ xX×件、，,（\x28].*)?/.source;
     field.required = required;
     field.placeholder = hint;
     field.dataset.title = title;
